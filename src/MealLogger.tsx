@@ -141,7 +141,6 @@ const MealLogger: React.FC = () => {
         padding: "20px",
         fontFamily: "Doto",
         width: "450px",
-        backgroundColor: "#9b9b9bff",
       }}
     >
       <h1>MEAL.in</h1>
