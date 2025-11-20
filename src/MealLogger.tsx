@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { GoogleGenAI } from "@google/genai";
 
-// Initialize the NEW SDK
 const ai = new GoogleGenAI({
   apiKey: import.meta.env.VITE_GOOGLE_API_KEY,
 });
@@ -33,7 +32,7 @@ const MealLogger: React.FC = () => {
         model: "gemini-2.5-flash",
         config: {
           responseMimeType: "application/json",
-          // We define the schema to ensure strict JSON output
+
           responseSchema: {
             type: "ARRAY",
             items: {
@@ -62,14 +61,11 @@ const MealLogger: React.FC = () => {
       // DEBUGGING: Log the raw response object
       console.log("Raw AI Response Object:", response);
 
-      // Method A: Standard SDK Helper
       let jsonText = response.text;
 
-      // Method B: Manual Fallback (if Method A fails/returns null)
       if (!jsonText && response.candidates && response.candidates.length > 0) {
         console.warn("Standard .text() was empty, trying manual extraction...");
         const candidate = response.candidates[0];
-        // Safely access the nested structure
         if (
           candidate.content &&
           candidate.content.parts &&
@@ -105,7 +101,7 @@ const MealLogger: React.FC = () => {
       const items = await fetchNutritionFromGemini(input);
 
       if (!items || items.length === 0) {
-        // This is the error you were seeing
+        // This is the error message
         alert(
           "I couldn't identify any food. Check the Console (F12) for the raw error."
         );
@@ -143,10 +139,17 @@ const MealLogger: React.FC = () => {
         maxWidth: "600px",
         margin: "0 auto",
         padding: "20px",
-        fontFamily: "sans-serif",
+        fontFamily: "Doto",
+        width: "450px",
+        backgroundColor: "#9b9b9bff",
       }}
     >
-      <h1>Smart Meal Logger (v2) ♊</h1>
+      <h1>MEAL.in</h1>
+      <p>Meal Logger</p>
+      <p>
+        This is an experimental project only with the results being estimated
+        values and should be used for secondary references only.
+      </p>
 
       <div
         style={{
@@ -154,7 +157,7 @@ const MealLogger: React.FC = () => {
           gap: "20px",
           marginBottom: "20px",
           padding: "15px",
-          background: "#f0f9ff",
+          background: "#797979ff",
           borderRadius: "8px",
         }}
       >
@@ -174,8 +177,12 @@ const MealLogger: React.FC = () => {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="e.g. 'Chicken breast and rice'"
-          style={{ flex: 1, padding: "10px", fontSize: "16px" }}
+          placeholder="Type your food, e.g. 'Chicken breast and rice'"
+          style={{
+            flex: 1,
+            padding: "10px",
+            fontSize: "16px",
+          }}
           disabled={isLoading}
         />
         <button
