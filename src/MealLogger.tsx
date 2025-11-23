@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({
@@ -23,16 +23,39 @@ const MealLogger: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [logs, setLogs] = useState<MealLog[]>([]);
 
+  useEffect(() => {
+    const savedLogs = localStorage.getItem("mealLogs");
+    if (savedLogs) {
+      try {
+        const parsed = JSON.parse(savedLogs);
+        const hydratedLogs = parsed.map((log: any) => ({
+          ...log,
+          timestamp: new Date(log.timestamp),
+        }));
+        setLogs(hydratedLogs);
+      } catch (e) {
+        console.error("Failed to load local storage", e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("mealLogs", JSON.stringify(logs));
+  }, [logs]);
+
+  const handleDelete = (id: number) => {
+    setLogs(logs.filter((log) => log.id !== id));
+  };
+
   const fetchNutritionFromGemini = async (
     text: string
   ): Promise<FoodItem[]> => {
-    console.log("--- Starting AI Request ---");
+    console.log("--- AI Request Started ---");
     try {
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
         config: {
           responseMimeType: "application/json",
-
           responseSchema: {
             type: "ARRAY",
             items: {
@@ -58,35 +81,23 @@ const MealLogger: React.FC = () => {
         ],
       });
 
-      // DEBUGGING: Log the raw response object
-      console.log("Raw AI Response Object:", response);
-
       let jsonText = response.text;
-
       if (!jsonText && response.candidates && response.candidates.length > 0) {
-        console.warn("Standard .text() was empty, trying manual extraction...");
-        const candidate = response.candidates[0];
+        const firstCandidate = response.candidates[0];
         if (
-          candidate.content &&
-          candidate.content.parts &&
-          candidate.content.parts.length > 0
+          firstCandidate.content &&
+          firstCandidate.content.parts &&
+          firstCandidate.content.parts.length > 0
         ) {
-          jsonText = candidate.content.parts[0].text;
+          jsonText = firstCandidate.content.parts[0].text;
         }
       }
 
-      console.log("Extracted JSON Text:", jsonText);
-
-      if (!jsonText) {
-        console.error("Fatal: Could not extract text from AI response.");
-        return [];
-      }
-
-      const parsedData = JSON.parse(jsonText);
-      console.log("Parsed Data:", parsedData);
-      return parsedData;
+      if (!jsonText) throw new Error("No text in response");
+      return JSON.parse(jsonText);
     } catch (error) {
-      console.error("Detailed Gemini Error:", error);
+      console.error("Gemini Error:", error);
+      alert(`Failed to process: ${(error as Error).message}`);
       return [];
     }
   };
@@ -99,12 +110,7 @@ const MealLogger: React.FC = () => {
 
     try {
       const items = await fetchNutritionFromGemini(input);
-
       if (!items || items.length === 0) {
-        // This is the error message
-        alert(
-          "I couldn't identify any food. Check the Console (F12) for the raw error."
-        );
         setIsLoading(false);
         return;
       }
@@ -119,13 +125,12 @@ const MealLogger: React.FC = () => {
       setLogs([newLog, ...logs]);
       setInput("");
     } catch (error) {
-      console.error("App Error:", error);
+      console.error("App Logic Error:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // --- Calculations and UI (Standard) ---
   const totalCalories = logs
     .flatMap((log) => log.items)
     .reduce((acc, curr) => acc + curr.calories, 0);
@@ -144,11 +149,7 @@ const MealLogger: React.FC = () => {
       }}
     >
       <h1>MEAL.in</h1>
-      <p>Meal Logger</p>
-      <p>
-        This is an experimental project only with the results being estimated
-        values and should be used for secondary references only.
-      </p>
+      <p>Draft Info</p>
 
       <div
         style={{
@@ -156,7 +157,7 @@ const MealLogger: React.FC = () => {
           gap: "20px",
           marginBottom: "20px",
           padding: "15px",
-          background: "#797979ff",
+          background: "#383838ff",
           borderRadius: "8px",
         }}
       >
@@ -176,12 +177,8 @@ const MealLogger: React.FC = () => {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your food, e.g. 'Chicken breast and rice'"
-          style={{
-            flex: 1,
-            padding: "10px",
-            fontSize: "16px",
-          }}
+          placeholder="e.g. 'Steak and potatoes'"
+          style={{ flex: 1, padding: "10px", fontSize: "16px" }}
           disabled={isLoading}
         />
         <button
@@ -196,22 +193,66 @@ const MealLogger: React.FC = () => {
             cursor: "pointer",
           }}
         >
-          {isLoading ? "Thinking..." : "Log It"}
+          {isLoading ? "..." : "Log"}
         </button>
       </form>
 
       <div>
-        <h3>History</h3>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          {logs.length > 0 && (
+            <button
+              onClick={() => {
+                if (confirm("Clear all history?")) setLogs([]);
+              }}
+              style={{
+                fontSize: "0.8rem",
+                color: "red",
+                cursor: "pointer",
+                background: "none",
+                border: "none",
+              }}
+            >
+              Clear All
+            </button>
+          )}
+        </div>
+
+        {logs.length === 0 && <p style={{ color: "#888" }}>No logs yet.</p>}
+
         {logs.map((log) => (
           <div
             key={log.id}
             style={{
+              position: "relative",
               border: "1px solid #ddd",
               padding: "15px",
               borderRadius: "8px",
               marginBottom: "10px",
             }}
           >
+            <button
+              onClick={() => handleDelete(log.id)}
+              style={{
+                position: "absolute",
+                top: "10px",
+                right: "10px",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "16px",
+                color: "#999",
+              }}
+              title="Delete this entry"
+            >
+              ✕
+            </button>
+
             <div
               style={{ fontSize: "0.9em", color: "#666", marginBottom: "5px" }}
             >
