@@ -1,10 +1,7 @@
 import React, { useState } from "react";
 import { useMealLogs } from "../../hooks/useMealLogs";
 import { fetchNutritionFromGemini } from "../../services/geminiServices";
-import {
-  calculateTotalCalories,
-  calculateTotalProtein,
-} from "../../utils/nutrition.utils";
+import { calculateTotalCalories, calculateTotalProtein } from "../../utils/nutrition.utils";
 import type { MealLog } from "../../types/meal.types";
 import { NutritionSummary } from "./NutritionSummary";
 import { MealForm } from "./MealForm";
@@ -44,26 +41,32 @@ const MealLogger: React.FC = () => {
   const totalProtein = calculateTotalProtein(logs);
 
   return (
-    <div
-      style={{
-        maxWidth: "600px",
-        margin: "0 auto",
-        padding: "20px",
-        fontFamily: "Doto",
-        width: "450px",
-      }}
-    >
-      <h1>MEAL.in</h1>
-      <p>Draft Info</p>
+    <div className="min-h-screen bg-white">
+      <div className="max-w-2xl mx-auto px-6 py-12">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold text-gray-900 mb-2 tracking-tight">
+            MEAL.in
+          </h1>
+          <p className="text-gray-500 text-sm">Track your nutrition effortlessly</p>
+        </div>
 
-      <NutritionSummary
-        totalCalories={totalCalories}
-        totalProtein={totalProtein}
-      />
+        {/* Nutrition Summary */}
+        <NutritionSummary
+          totalCalories={totalCalories}
+          totalProtein={totalProtein}
+        />
 
-      <MealForm onSubmit={handleLogMeal} isLoading={isLoading} />
+        {/* Meal Input Form */}
+        <MealForm onSubmit={handleLogMeal} isLoading={isLoading} />
 
-      <MealLogList logs={logs} onDelete={deleteLog} onClearAll={clearAllLogs} />
+        {/* Meal Log List */}
+        <MealLogList
+          logs={logs}
+          onDelete={deleteLog}
+          onClearAll={clearAllLogs}
+        />
+      </div>
     </div>
   );
 };

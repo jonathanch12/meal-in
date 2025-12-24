@@ -1,11 +1,13 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import "./App.css";
-import MealLogger from "./components/MealLogger/MealLogger";
+import React from 'react';
+import MealLogger from './components/MealLogger/MealLogger';
+import './index.css';
 
 function App() {
-  return <MealLogger />;
+  return (
+    <div className="bg-white min-h-screen">
+      <MealLogger />
+    </div>
+  );
 }
 
 export default App;
