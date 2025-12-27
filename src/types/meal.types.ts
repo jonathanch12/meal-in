@@ -10,3 +10,14 @@ export interface MealLog {
   originalText: string;
   items: FoodItem[];
 }
+
+export interface MealInput {
+  text?: string;
+  image?: File;
+}
+
+export interface PendingMeal {
+  input: MealInput;
+  items: FoodItem[];
+  imagePreview?: string;
+}
